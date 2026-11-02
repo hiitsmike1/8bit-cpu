@@ -8,34 +8,24 @@ module reg_file(
     input wire [7:0] bus_in,
     output reg [7:0] bus_out
 );
+    //Four 8-bit registers
+    reg [7:0] registers [0:3];
 
-    reg [7:0] R0;
-    reg [7:0] R1;
-    reg [7:0] R2;
-    reg [7:0] R3;
-
+    //Sequential Logic for writing to register values
     always @(posedge clk or posedge rst) begin
         if (rst) begin 
-            R0 <= 8'h00;
-            R1 <= 8'h00;
-            R2 <= 8'h00;
-            R3 <= 8'h00;
-        end else if (set_reg) begin
-            case(reg_sel)
-                2'b00: R0 <= bus_in;
-                2'b01: R1 <= bus_in;
-                2'b10: R2 <= bus_in;
-                2'b11: R3 <= bus_in;
-            endcase
+            registers[0] <= 8'h00;
+            registers[1] <= 8'h00;
+            registers[2] <= 8'h00;
+            registers[3] <= 8'h00;
+        end 
+        else if (set_reg) begin
+            registers[reg_sel] <= bus_in;
         end
     end
 
+    //Combination Logic for Reading Registers
     always @(*) begin
-        case(reg_sel)
-            2'b00: bus_out = R0;
-            2'b01: bus_out = R1;
-            2'b10: bus_out = R2;
-            2'b11: bus_out = R3;
-        endcase
+        bus_out = registers[reg_sel];
     end
 endmodule
