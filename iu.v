@@ -27,14 +27,13 @@ module iu(
 
     localparam FETCH1  = 4'b0000;
     localparam FETCH2  = 4'b0001;
-    localparam DECODE  = 4'b0010;
-    localparam ADD1    = 4'b0011;
-    localparam ADD2    = 4'b0100;
-    localparam ADD3    = 4'b0101;
-    localparam FETCH3  = 4'b0110;  
-    localparam FETCH4  = 4'b0111;  
-    localparam EXEC1   = 4'b1000;  
-    localparam EXEC2   = 4'b1001;  
+    localparam FETCH3  = 4'b0010;  
+    localparam FETCH4  = 4'b0011;
+    localparam ALU1    = 4'b0100;
+    localparam ALU2    = 4'b0101;
+    localparam ALU3    = 4'b0110;
+    localparam EXEC1   = 4'b0111;  
+    localparam EXEC2   = 4'b1000;  
     reg [3:0] current_state, next_state;
 
     localparam OP_LOAD  = 3'b001;
@@ -80,7 +79,7 @@ module iu(
     end
 
     always @(*) begin
-
+        //Resets all outputs to be off so nothing is driving the bus by default
         en_alu = 1'b0; set_alu = 1'b0;
         en_ram = 1'b0; set_ram_addr = 1'b0; set_ram_data = 1'b0;
         en_reg = 1'b0; set_reg = 1'b0;
@@ -137,8 +136,8 @@ module iu(
 
             
             EXEC1: begin
-                // address phase for LOAD/STORE: put operand address on bus
-                bus_out = {3'b000, IR[4:0]};
+                // address phase for LOAD/STORE: put address on bus
+                bus_out = IR;
                 en_iu = 1'b1;
                 set_ram_addr = 1'b1;
             end
@@ -147,6 +146,7 @@ module iu(
                 // operation phase for LOAD/STORE, register comes from IR2
                 reg_sel = mem_reg;
                 case (opcode)
+                    //Put value at address (IR[4:0]) into register (IR2[1:0])
                     OP_LOAD: begin
                         en_ram = 1'b1;
                         set_reg = 1'b1;
