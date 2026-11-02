@@ -13,6 +13,7 @@ module top(
 
     wire [2:0] op;
     wire compute;
+    wire carry_in;
 
     wire en_alu, set_alu;
     wire en_ram, set_ram_addr, set_ram_data;
@@ -31,8 +32,9 @@ module top(
         .set(set_alu),
         .bus_out(alu_out),
         .op(op),
-        .c_in(1'b0),
-        .compute(compute)
+        .c_in(carry_in),
+        .compute(compute),
+        .rst(rst)
     );
 
     iu iu0(
@@ -46,7 +48,8 @@ module top(
         .en_iu(en_iu),
         .en_reg(en_reg), .set_reg(set_reg),
         .compute(compute),
-        .reg_sel(reg_sel)
+        .reg_sel(reg_sel),
+        .c_in(carry_in)
     );
 
     ram ram0(

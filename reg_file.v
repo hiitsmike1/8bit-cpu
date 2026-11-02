@@ -24,7 +24,7 @@ module reg_file(
         end
     end
 
-    //Combination Logic for Reading Registers
+    //Combinational Logic for Reading Registers
     always @(*) begin
         bus_out = registers[reg_sel];
     end

@@ -10,20 +10,23 @@ module iu(
     output reg [1:0] reg_sel,
     output reg en_ram, output reg set_ram_addr, output reg set_ram_data,
     output reg en_iu,
-    output reg compute
+    output reg compute,
+    output wire c_in
 
 );
 
     reg [7:0] PC;
     reg [7:0] IR;
-    reg [7:0] IR2;   // second instruction byte: register select for LOAD/STORE
+    reg [7:0] IR2;   // second instruction byte: address  for LOAD/STORE
 
     assign op = IR2[7:5];          //ALU operation
     wire [2:0] opcode = IR[7:5];   //Chooses CPU operation (LOAD, STORE, ALU)
 
-    wire [1:0] reg_a = IR2[4:3];   //Register A for operation
-    wire [1:0] reg_b = IR2[2:1];   //Register B for operation
-    wire [1:0] mem_reg = IR2[1:0]; // LOAD/STORE register 
+    wire [1:0] reg_a = IR[4:3];   //Register A for operation
+    wire [1:0] reg_b = IR[2:1];   //Register B for operation
+    assign c_in = IR[0];
+
+    wire [1:0] mem_reg = IR[4:3]; // LOAD/STORE register 
 
     localparam FETCH1  = 4'b0000;
     localparam FETCH2  = 4'b0001;
@@ -137,7 +140,7 @@ module iu(
             
             EXEC1: begin
                 // address phase for LOAD/STORE: put address on bus
-                bus_out = IR;
+                bus_out = IR2;
                 en_iu = 1'b1;
                 set_ram_addr = 1'b1;
             end
@@ -146,7 +149,7 @@ module iu(
                 // operation phase for LOAD/STORE, register comes from IR2
                 reg_sel = mem_reg;
                 case (opcode)
-                    //Put value at address (IR[4:0]) into register (IR2[1:0])
+                    //Put value at address (IR2) into register (IR[4:3])
                     OP_LOAD: begin
                         en_ram = 1'b1;
                         set_reg = 1'b1;
@@ -162,8 +165,7 @@ module iu(
                 endcase
             end
 
-            default: begin
-            end
+            
         endcase
     end
 endmodule
