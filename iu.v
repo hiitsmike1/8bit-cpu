@@ -18,12 +18,12 @@ module iu(
     reg [7:0] IR;
     reg [7:0] IR2;   // second instruction byte: register select for LOAD/STORE
 
-    assign op = IR2[7:5];
-    wire [2:0] opcode = IR[7:5];
+    assign op = IR2[7:5];          //ALU operation
+    wire [2:0] opcode = IR[7:5];   //Chooses CPU operation (LOAD, STORE, ALU)
 
-    wire [1:0] reg_a = IR2[4:3];   // ADD operands come from byte 1
-    wire [1:0] reg_b = IR2[2:1];
-    wire [1:0] mem_reg = IR2[1:0]; // LOAD/STORE register comes from byte 2
+    wire [1:0] reg_a = IR2[4:3];   //Register A for operation
+    wire [1:0] reg_b = IR2[2:1];   //Register B for operation
+    wire [1:0] mem_reg = IR2[1:0]; // LOAD/STORE register 
 
     localparam FETCH1  = 4'b0000;
     localparam FETCH2  = 4'b0001;
@@ -31,10 +31,10 @@ module iu(
     localparam ADD1    = 4'b0011;
     localparam ADD2    = 4'b0100;
     localparam ADD3    = 4'b0101;
-    localparam FETCH3  = 4'b0110;  // LOAD/STORE only: PC -> MAR for byte 2
-    localparam FETCH4  = 4'b0111;  // LOAD/STORE only: RAM -> IR2, PC++
-    localparam EXEC1   = 4'b1000;  // address phase (byte 1's IR[4:0])
-    localparam EXEC2   = 4'b1001;  // data phase, using IR2 for reg_sel
+    localparam FETCH3  = 4'b0110;  
+    localparam FETCH4  = 4'b0111;  
+    localparam EXEC1   = 4'b1000;  
+    localparam EXEC2   = 4'b1001;  
     reg [3:0] current_state, next_state;
 
     localparam OP_LOAD  = 3'b001;
@@ -68,7 +68,7 @@ module iu(
             FETCH1:  next_state = FETCH2;
             FETCH2:  next_state = FETCH3;
             FETCH3:  next_state = FETCH4;
-            FETCH4:  next_state = (opcode == OP_ALU) ? ALU1 : EXEC1;
+            FETCH4:  next_state = (opcode == OP_ALU) ? ALU1 : EXEC1; //Chooses which
             ALU1:    next_state = ALU2;
             ALU2:    next_state = ALU3;
             ALU3:    next_state = FETCH1;
@@ -91,40 +91,45 @@ module iu(
 
         case (current_state)
             FETCH1: begin
+                //Goes to RAM address based on PC
                 bus_out = PC;
                 en_iu = 1'b1;
                 set_ram_addr = 1'b1;
             end
 
             FETCH2: begin
+                //Grabs the first byte at address PC and stores it in IR
                 en_ram = 1'b1;
             end
 
             FETCH3: begin
-                // fetch byte 2 (register select), same pattern as FETCH1
+                //Goes to RAM address to grab second byte
                 bus_out = PC;
                 en_iu = 1'b1;
                 set_ram_addr = 1'b1;
             end
 
             FETCH4: begin
-                // same pattern as FETCH2, but latches into IR2
+                // same pattern as FETCH2, but stores into IR2
                 en_ram = 1'b1;
             end
 
             ALU1: begin
+                //Stores first number in temp reg in ALU
                 reg_sel = reg_a;
                 en_reg = 1'b1;
                 set_alu = 1'b1;
             end
 
             ALU2: begin
+                //Sets second number to bus and ALU stores answer
                 reg_sel = reg_b;
                 en_reg = 1'b1;
                 compute = 1'b1;
             end
 
             ALU3: begin
+                //Stores the answer back into the first register given.
                 reg_sel = reg_a;
                 en_alu = 1'b1;
                 set_reg = 1'b1;

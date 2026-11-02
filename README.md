@@ -13,18 +13,18 @@ I built this CPU to understand how a processor works at the register-transfer le
 - **8-bit datapath** with a shared data bus
 - **4-register file**
 - **RAM** addressed through a 5-bit memory address register (MAR), giving **32 addressable words** 
-- **ALU** supporting ADD, SUB, AND, OR, XOR, SHL, and SHR *(currently only ADD is reachable from an instruction; see Status)*
+- **ALU** supporting ADD, SUB, AND, OR, XOR, SHL, and SHR 
 - **Multi-cycle control unit** (module `iu`) built as a finite-state machine
-- **Custom instruction set:** LOAD, STORE, ADD
+- **Custom instruction set:** LOAD, STORE, ALU
 ## Architecture
  
 | Block | Module | Role |
 |-------|--------|------|
-| Register file | [`regfile`] | Four 8-bit registers |
+| Register file | [`reg_file`] | Four 8-bit registers |
 | RAM | [`ram`] | Program and data storage, addressed through MAR |
 | ALU | `alu` | Arithmetic and logic |
 | Control unit | `iu` | FSM that holds PC, IR, and IR2 and generates every enable and load signal |
-| Top level | [`cpu`] | Connects everything to the shared bus |
+| Top level | [`top`] | Connects everything to the shared bus |
  
 
  
@@ -39,17 +39,17 @@ All blocks put their data on one 8-bit bus. Instead of true tri-state drivers, t
 | Instruction | Opcode `IR[7:5]` | Length | Effect |
 |-------------|------------------|--------|--------|
 | `LOAD Rn, [addr]`  | `001` | 2 bytes | `Rn = mem[addr]` |
-| `ADD Ra, Rb`       | `010` | 1 byte  | `Ra = Ra + Rb` |
+| `ALU Ra, Rb, op`       | `010` | 2 byte  | `Ra = ALU(Ra, Rb, op)` |
 | `STORE Rn, [addr]` | `011` | 2 bytes | `mem[addr] = Rn` |
  
-**ADD (1 byte):**
+**ALU (2 byte):**
  
-| Bits | Field |
-|------|-------|
-| `[7:5]` | opcode (`010`) |
-| `[4:3]` | `reg_a`: first operand and destination |
-| `[2:1]` | `reg_b`: second operand |
-| `[0]` | unused |
+| Byte | Bits | Field |
+|------|------|-------|
+| 1 | `[7:5]` | opcode (`010` ALU) |
+| 2 | `[7:5]` | op for ALU |
+| 2 | `[4:3]` | Register for operand A |
+| 2 | `[2:1]` | Register for operand B |
  
 **LOAD and STORE (2 bytes):**
  
@@ -68,17 +68,16 @@ The FSM fetches one instruction byte at a time, then runs a path that depends on
 |-------|--------------|
 | FETCH1 | PC goes onto the bus and into MAR |
 | FETCH2 | RAM drives the bus, IR latches the byte, PC increments |
-| DECODE | ADD goes to ADD1; any other opcode goes to FETCH3 |
-| ADD1 | `reg_a` goes onto the bus and into the ALU's first operand |
-| ADD2 | `reg_b` goes onto the bus and the ALU computes |
-| ADD3 | ALU result goes onto the bus and is written back to `reg_a` |
 | FETCH3 | PC goes onto the bus and into MAR (second byte) |
 | FETCH4 | RAM drives the bus, IR2 latches the byte, PC increments |
+| ADD1 | `reg_a` goes onto the bus and into the ALU's internal register |
+| ADD2 | `reg_b` goes onto the bus and the ALU computes |
+| ADD3 | ALU result goes onto the bus and is written back to `reg_a` |
 | EXEC1 | The address in `IR[4:0]` goes onto the bus and into MAR |
 | EXEC2 | LOAD: RAM to register. STORE: register to RAM |
  
-- **ADD takes 6 cycles** (FETCH1, FETCH2, DECODE, ADD1, ADD2, ADD3).
-- **LOAD and STORE take 7 cycles** (FETCH1, FETCH2, DECODE, FETCH3, FETCH4, EXEC1, EXEC2).
+- **ADD takes 7 cycles** (FETCH1, FETCH2, FETCH3, FETCH4, ADD1, ADD2, ADD3).
+- **LOAD and STORE take 6 cycles** (FETCH1, FETCH2, FETCH3, FETCH4, EXEC1, EXEC2).
 ![Control FSM state diagram](docs/fsm.png)
  
 ## Example Program
@@ -91,17 +90,17 @@ This program loads 25 and 10 from memory, adds them, and stores the result.
 |---------|-------|-------------|--------|
 | 0, 1 | `3E 00` | `LOAD R0, [30]` | R0 = 25 |
 | 2, 3 | `3F 01` | `LOAD R1, [31]` | R1 = 10 |
-| 4 | `42` | `ADD R0, R1` | R0 = 35 (`0x23`) |
-| 5, 6 | `7D 00` | `STORE R0, [29]` | mem[29] = 35 |
+| 4, 5 | `40 02` | `ADD R0, R1` | R0 = 35 (`0x23`) |
+| 6, 7 | `7D 00` | `STORE R0, [29]` | mem[29] = 35 |
  
 **Data memory:** address 30 holds `0x19` and address 31 holds `0x0A`.
  
 **How the bytes are built**
 - `LOAD R0, [30]`: opcode `001`, address 30 = `11110`, so byte 1 = `0011 1110` = `3E`. Byte 2 selects register 0, so it is `00`.
 - `LOAD R1, [31]`: `001` and `11111` give `3F`; register 1 gives `01`.
-- `ADD R0, R1`: `010`, `reg_a` = `00`, `reg_b` = `01`, unused bit `0` give `0100 0010` = `42`.
+- `ADD R0, R1`: `01000000` Selects the ALU. Byte 2 `000` selects ADD, `00` selects R0, `01` selects R1 giving `00000010` so it is `02`.
 - `STORE R0, [29]`: `011` and `11101` give `7D`; register 0 gives `00`.
-**Expected result:** after the ADD finishes (20 cycles in), R0 = `0x23`. After the STORE (27 cycles in), memory address 29 also holds `0x23`.
+**Expected result:** after the ADD finishes (19 cycles in), R0 = `0x23`. After the STORE (25 cycles in), memory address 29 also holds `0x23`.
  
 Execution continues past the end of the program through zero bytes. Opcode `000` falls into the LOAD/STORE path and does nothing in EXEC2, so zeros act as harmless two-byte no-ops.
  
@@ -111,15 +110,11 @@ Execution continues past the end of the program through zero bytes. Opcode `000`
  
 ## Design Challenges
  
-**Bus contention and timing hazards.** Early versions had overlapping datapath signals, so two blocks drove the shared bus at the same time and values were captured in the wrong cycle. [Describe how you found it in the waveform and how you fixed it, for example with the priority mux and by sequencing enables and loads in separate states.]
+**Bus contention and timing hazards.** Early versions had overlapping datapath signals, so two blocks drove the shared bus at the same time and values were captured in the wrong cycle.  I wanted to try to use tri-state buffers for each of the outputs where each module was driven by an enable signal, but I realized I could use a multiplexer to choose which datapath drives the bus.
  
 **Instruction encoding.** 
  
-## Status and Next Steps
- 
-- **Working:**
-- **Next:** moving the ALU operation into a second instruction byte, so every instruction is two bytes and the other ALU operations (SUB, AND, OR, XOR, SHL, SHR) can be used from programs
-- **Idea:** porting the design to an FPGA board *(only keep this if you still plan to)*
+
 ## Repository Structure
  
  

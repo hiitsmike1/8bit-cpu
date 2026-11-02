@@ -7,7 +7,7 @@ module ram(
     output reg [7:0] bus_out
 );
 
-    reg [7:0] mem [0:255];
+    reg [7:0] mem [0:31];
 
     reg [4:0] MAR; 
 
