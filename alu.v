@@ -46,6 +46,7 @@ module alu(
                     3'b101: begin
                         c_out <= temp_reg[7]; 
                         result_reg <= temp_reg << 1;
+                    end
                     3'b110: begin
                         c_out <= temp_reg[0];
                         result_reg <= temp_reg >> 1;
