@@ -20,3 +20,11 @@ vivado/**/*.dcp
 vivado/**/*.bit
 vivado/**/*.ltx
 vivado/**/*.Xil/
+<<<<<<< HEAD
+=======
+
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
+>>>>>>> f278201 (Cleaned up excess files and added .gitignore)
