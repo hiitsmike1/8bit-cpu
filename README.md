@@ -35,7 +35,7 @@ I built this CPU to understand how a processor works at the register-transfer le
 All blocks put their data on one 8-bit bus. Instead of true tri-state drivers, the bus is arbitrated by a priority mux driven by four enable signals from the control unit: `en_alu`, `en_ram`, `en_reg`, and `en_iu`. Only one block drives the bus in a given cycle. Separate `set_*` signals tell a block to latch whatever is on the bus.
  
 ## Instruction Set
- 
+ Every instruction is two bytes. Byte 1 holds the opcode in `IR[7:5]`, and byte 2 (stored in `IR2`) holds the operands.
 | Instruction | Opcode `IR[7:5]` | Length | Effect |
 |-------------|------------------|--------|--------|
 | `LOAD Rn, [addr]`  | `001` | 2 bytes | `Rn = mem[addr]` |
@@ -46,10 +46,12 @@ All blocks put their data on one 8-bit bus. Instead of true tri-state drivers, t
  
 | Byte | Bits | Field |
 |------|------|-------|
-| 1 | `[7:5]` | opcode (`010` ALU) |
-| 2 | `[7:5]` | op for ALU |
-| 2 | `[4:3]` | Register for operand A |
-| 2 | `[2:1]` | Register for operand B |
+| 1 | `[7:5]` | opcode (`010`) |
+| 1 | `[4:0]` | unused |
+| 2 | `[7:5]` | ALU operation (table below) |
+| 2 | `[4:3]` | register for operand A (also the destination) |
+| 2 | `[2:1]` | register for operand B |
+| 2 | `[0]` | unused |
  
 **LOAD and STORE (2 bytes):**
  
@@ -70,14 +72,14 @@ The FSM fetches one instruction byte at a time, then runs a path that depends on
 | FETCH2 | RAM drives the bus, IR latches the byte, PC increments |
 | FETCH3 | PC goes onto the bus and into MAR (second byte) |
 | FETCH4 | RAM drives the bus, IR2 latches the byte, PC increments |
-| ADD1 | `reg_a` goes onto the bus and into the ALU's internal register |
-| ADD2 | `reg_b` goes onto the bus and the ALU computes |
-| ADD3 | ALU result goes onto the bus and is written back to `reg_a` |
+| ALU1 | `reg_a` goes onto the bus and into the ALU's internal register |
+| ALU2 | `reg_b` goes onto the bus and the ALU computes |
+| ALU3 | ALU result goes onto the bus and is written back to `reg_a` |
 | EXEC1 | The address in `IR[4:0]` goes onto the bus and into MAR |
 | EXEC2 | LOAD: RAM to register. STORE: register to RAM |
  
-- **ADD takes 7 cycles** (FETCH1, FETCH2, FETCH3, FETCH4, ADD1, ADD2, ADD3).
-- **LOAD and STORE take 6 cycles** (FETCH1, FETCH2, FETCH3, FETCH4, EXEC1, EXEC2).
+- **ADD takes 7 cycles** (FETCH1 to FETCH4, then ALU1 to ALU3).
+- **LOAD and STORE take 6 cycles** (FETCH1 to FETCH4, then EXEC1 and EXEC2).
 ![Control FSM state diagram](docs/fsm.png)
  
 ## Example Program
