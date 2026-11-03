@@ -4,7 +4,7 @@ A custom 8-bit CPU designed from scratch in Verilog: my own instruction set, a 4
  
 **Website:** https://hiitsmike1.github.io/michaelcrandall.github.io/
  
-![Simulation waveform of a program running](docs/waveform.png)
+![Simulation waveform of a program running](images/waveform.png)
  
 ## Overview
  
@@ -28,7 +28,7 @@ I built this CPU to understand how a processor works at the register-transfer le
  
 
  
-![Datapath block diagram](docs/block_diagram.png)
+![Datapath block diagram](images/block_diagram.png)
  
 ### Shared data bus
  
@@ -90,7 +90,7 @@ The FSM fetches one instruction byte at a time, then runs a path that depends on
  
 - **ADD takes 7 cycles** (FETCH1 to FETCH4, then ALU1 to ALU3).
 - **LOAD and STORE take 6 cycles** (FETCH1 to FETCH4, then EXEC1 and EXEC2).
-![Control FSM state diagram](docs/fsm.png)
+![Control FSM state diagram](images/fsm.png)
  
 ## Example Program
  
