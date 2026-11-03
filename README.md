@@ -137,7 +137,8 @@ This allowed the CPU to support four general-purpose registers, seven ALU operat
 
 
 ## Repository Structure
- 
+
+```
 8bit-cpu/
 │
 ├── src/                         # Verilog CPU design modules
@@ -163,6 +164,7 @@ This allowed the CPU to support four general-purpose registers, seven ALU operat
 │
 ├── .gitignore
 └── README.md
+```
 
  
 ## Related Projects
