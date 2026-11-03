@@ -4,7 +4,6 @@ A custom 8-bit CPU designed from scratch in Verilog: my own instruction set, a 4
  
 **Website:** https://hiitsmike1.github.io/michaelcrandall.github.io/
  
-![Simulation waveform of a program running](images/waveform.png)
  
 ## Overview
  
@@ -123,7 +122,9 @@ Execution continues past the end of the program through zero bytes. Opcode `000`
  
 ## Simulation
  
+The small example program above was implemented into cpu_tb.v. The program was then simulated in Vivado to verify results. The waveform image of program running is below.
 
+![Simulation waveform of a program running](images/waveform.png)
  
 ## Design Challenges
  
@@ -137,14 +138,31 @@ This allowed the CPU to support four general-purpose registers, seven ALU operat
 
 ## Repository Structure
  
- .
-├── docs/
-│   ├── 
-├── alu.v
-├── iu.v
-├── ram.v
-├── reg_file.v
-└── top.v
+8bit-cpu/
+│
+├── src/                         # Verilog CPU design modules
+│   ├── top.v                    # Top-level CPU module
+│   ├── alu.v                    # Arithmetic Logic Unit
+│   ├── iu.v                     # Instruction Unit / Control FSM
+│   ├── ram.v                    # 256 x 8-bit RAM
+│   └── reg_file.v               # Four 8-bit general-purpose registers
+│
+├── sim/                         # Verilog simulation testbenches
+│   ├── cpu_tb.v                 # Small Program to Test Functions
+│
+├── vivado/                      # Vivado project
+│   └── cpu_8bit/
+│       ├── cpu_8bit.xpr         # Vivado project file
+│       ├── cpu_8bit.srcs/       # Vivado source set configuration
+│       ├── cpu_8bit.sim/        # Generated simulation files
+│       ├── cpu_8bit.runs/       # Generated synthesis/implementation files
+│       └── cpu_8bit.cache/      # Vivado cache files
+│
+├── images/
+│   └── cpu_simulation.png       # CPU simulation waveform
+│
+├── .gitignore
+└── README.md
 
  
 ## Related Projects
